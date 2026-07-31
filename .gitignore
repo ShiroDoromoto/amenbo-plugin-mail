@@ -1,0 +1,8 @@
+/mail
+/amenbo-plugin-mail
+/dist/
+
+.amenbo
+AGENTS.md
+CLAUDE.md
+/.claude/

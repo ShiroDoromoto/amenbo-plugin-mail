@@ -1,0 +1,76 @@
+{
+  "name": "mail",
+  "desc": "Report what your AI did by email",
+  "author": "amenbo",
+  "repo": "ShiroDoromoto/amenbo-plugin-mail",
+  "os": ["macos", "windows", "linux"],
+  "category": "notification",
+  "assets": {
+    "macos-arm64": {
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-macos-arm64.tar.gz",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "macos-x64": {
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-macos-x64.tar.gz",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "linux-x64": {
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-linux-x64.tar.gz",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "linux-arm64": {
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-linux-arm64.tar.gz",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "windows-x64": {
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-windows-x64.tar.gz",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "windows-arm64": {
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-windows-arm64.tar.gz",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "payload_v": 1,
+  "min_amenbo": "3.1.0",
+  "config": [
+    { "key": "smtp_host", "label": "SMTP host", "required": true },
+    { "key": "smtp_port", "label": "SMTP port", "default": "587" },
+    { "key": "smtp_user", "label": "SMTP username" },
+    { "key": "smtp_password", "label": "SMTP password", "secret": true },
+    { "key": "from", "label": "Sender address", "required": true },
+    { "key": "to", "label": "Where to report to", "required": true },
+    {
+      "key": "events",
+      "label": "What to report",
+      "type": "multi",
+      "default": "task.created,task.status_changed,task.done,task.rejected",
+      "options": [
+        { "value": "task.created", "label": "A task was created" },
+        { "value": "task.status_changed", "label": "A task's status moved" },
+        { "value": "task.done", "label": "A task was finished" },
+        { "value": "task.rejected", "label": "A task was decided against" },
+        { "value": "task.assigned", "label": "A task was assigned" },
+        { "value": "task.moved", "label": "A task moved to another project" },
+        { "value": "task.deleted", "label": "A task was deleted" },
+        { "value": "decision.accepted", "label": "A decision was accepted" },
+        { "value": "decision.rejected", "label": "A decision was rejected" },
+        { "value": "comment.added", "label": "A comment was added" },
+        { "value": "comment.removed", "label": "A comment was taken back" }
+      ]
+    }
+  ],
+  "events": [
+    "task.created",
+    "task.status_changed",
+    "task.done",
+    "task.rejected",
+    "task.assigned",
+    "task.moved",
+    "task.deleted",
+    "decision.accepted",
+    "decision.rejected",
+    "comment.added",
+    "comment.removed"
+  ]
+}
