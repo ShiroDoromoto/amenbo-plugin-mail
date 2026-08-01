@@ -33,6 +33,8 @@ func event(name string) input {
 
 func TestHookReportsAChosenEvent(t *testing.T) {
 	t.Setenv(secretEnv(keySMTPPassword), "app-password")
+	t.Setenv(envReach, someReach)
+	answerAmenbo(t, everythingAnswers())
 	out := captureErr(t)
 
 	if err := hook(event(eventTaskDone)); err != nil {
@@ -40,6 +42,27 @@ func TestHookReportsAChosenEvent(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), eventTaskDone) {
 		t.Errorf("nothing said about the event: %q", out.String())
+	}
+	if !strings.Contains(out.String(), "Ship the thing") {
+		t.Errorf("the number was not filled in with what it names: %q", out.String())
+	}
+}
+
+// A read that will not come back costs the run its exit code, not its message: what was read is
+// still said, and the failure reaches the execution log beside it.
+func TestHookSaysWhatItCouldWhenAReadFails(t *testing.T) {
+	t.Setenv(secretEnv(keySMTPPassword), "app-password")
+	t.Setenv(envReach, someReach)
+	answers := everythingAnswers()
+	answers["task show"] = ""
+	answerAmenbo(t, answers)
+	out := captureErr(t)
+
+	if err := hook(event(eventTaskDone)); err == nil {
+		t.Fatalf("hook ended cleanly on a read that did not come back")
+	}
+	if !strings.Contains(out.String(), "amenbo-plugin-mail") {
+		t.Errorf("what did come back was thrown away too: %q", out.String())
 	}
 }
 

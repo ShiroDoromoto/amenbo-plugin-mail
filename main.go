@@ -20,14 +20,15 @@
 // read through in the environment; this plugin passes neither on and adds nothing of its own.
 //
 // Here are the entry point and the payload contract; config.go has the settings a message is
-// sent on, events.go which events earn one, state.go the per-project folder that whatever has
-// to outlive one run is kept in, seen.go the record of the events already taken in — what tells
-// a redelivery from a first sight of one — and send.go the SMTP conversation that carries a
-// message. The wording of a message is what is still to be written, and until it is nothing
-// calls those last three, so a hook run today reads its event, works out
-// where it would go, says on stderr that it cannot take it there yet, and ends cleanly. A run
-// whose required settings are not filled in ends instead on the error naming them, which is the
-// one failure this build already reports for real.
+// sent on, events.go which events earn one, reader.go what amenbo is asked to fill a number in
+// with, state.go the per-project folder that whatever has to outlive one run is kept in, seen.go
+// the record of the events already taken in — what tells a redelivery from a first sight of one
+// — and send.go the SMTP conversation that carries a message. The wording of a message is what
+// is still to be written, and until it is nothing calls the last three, so a hook run today
+// reads its event, asks amenbo what the number names, says on stderr that it cannot take it
+// anywhere yet, and ends cleanly. A run whose required settings are not filled in ends instead
+// on the error naming them, and one whose read did not come back ends non-zero having said what
+// it could — the two failures this build already reports for real.
 package main
 
 import (
@@ -123,8 +124,13 @@ func readInput(f *os.File) input {
 // a line in amenbo's execution log instead of a message in a mailbox.
 //
 // The order is what makes a quiet run quiet. An event this plugin is not going to report is no
-// reason to complain that it is unconfigured, so the settings are read last — after the event
-// has already earned a message.
+// reason to complain that it is unconfigured, and neither is one it could not have sent — so the
+// settings are read after the event has earned a message, and amenbo is asked about the record
+// only once there is somewhere to send what it says.
+//
+// A read that will not come back does not stop the run: what came back is used and the failure
+// is answered with, so the exit code puts it in the execution log without costing the user the
+// message.
 func hook(in input) error {
 	if in.Event == "" {
 		return nil
@@ -142,8 +148,10 @@ func hook(in input) error {
 	if err != nil {
 		return err
 	}
-	logf("%s: %s on %d is for %s — no message is sent by this build", pluginName, in.Event, in.ID, strings.Join(cfg.to, ", "))
-	return nil
+	d, err := lookup(in)
+	logf("%s: %s %s (%s) in %s is for %s — no message is sent by this build",
+		pluginName, in.Event, d.ref, d.title, d.project, strings.Join(cfg.to, ", "))
+	return err
 }
 
 func main() {
