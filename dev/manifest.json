@@ -8,27 +8,27 @@
   "assets": {
     "macos-arm64": {
       "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-macos-arm64.tar.gz",
-      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      "checksum": "sha256:1357d69dc3d2ead390821a568be256d2d54fd150f35e8f46f02f6da646989b74"
     },
     "macos-x64": {
       "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-macos-x64.tar.gz",
-      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      "checksum": "sha256:44d7cc6637480e86de7dfd2062aeeaa5a71d0372e52e1c1b7de44684911c9147"
     },
     "linux-x64": {
       "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-linux-x64.tar.gz",
-      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      "checksum": "sha256:349a57abaef31cec0205bea71781823753f091e155e1b2f68f77ebebc3a1d931"
     },
     "linux-arm64": {
       "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-linux-arm64.tar.gz",
-      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      "checksum": "sha256:83aaa005eb340673e666d7c8394ba3d3a56087b01dbca08ca14ecb31fb64a7fc"
     },
     "windows-x64": {
       "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-windows-x64.tar.gz",
-      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      "checksum": "sha256:f20da7a253b04a3d51a74d404f5dce5b9e9dd841c6eac7924a8d96aa0235ac3c"
     },
     "windows-arm64": {
       "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-windows-arm64.tar.gz",
-      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      "checksum": "sha256:7342681998ca43b944970f802dd9dcb5743bdba856f15398d246a73b441765da"
     }
   },
   "payload_v": 1,
