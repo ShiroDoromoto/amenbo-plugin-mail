@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -41,16 +40,17 @@ var sendMessage = send
 
 // send hands one message to the server the settings name.
 //
-// The subject arrives ready to be a header — encoded, and cut to length — and the body ready to
-// be read. What is added here is the envelope around them.
-func send(s settings, subject, body string) error {
+// The subject arrives ready to be a header — encoded, and cut to length — the body ready to be
+// read, and the thread already knowing which message it hangs off. What is added here is the
+// envelope around them.
+func send(s settings, subject, body string, t thread) error {
 	c := conversation{
 		settings:  s,
 		tls:       &tls.Config{ServerName: s.host},
 		fromStart: tlsFromTheStart(s.port),
 		deadline:  time.Now().Add(sendTimeout),
 	}
-	return withoutSecret(c.send(compose(s, subject, body)), s.password)
+	return withoutSecret(c.send(compose(s, subject, body, t)), s.password)
 }
 
 // conversation is one send: who to talk to, how to encrypt it, and when to give up. It is
@@ -139,17 +139,20 @@ func (c conversation) dial() (net.Conn, error) {
 	return d.Dial("tcp", addr)
 }
 
-// compose writes the message: the headers a mail client needs to file it, then the body.
-func compose(s settings, subject, body string) string {
+// compose writes the message: the headers a mail client needs to file it, then the body. Which
+// thread it is filed in is thread.go's to say, and it says it in headers of its own.
+func compose(s settings, subject, body string, t thread) string {
 	headers := []string{
 		"From: " + headerValue(s.from),
 		"To: " + headerValue(strings.Join(s.to, ", ")),
 		"Subject: " + headerValue(subject),
 		"Date: " + time.Now().Format(time.RFC1123Z),
-		"Message-ID: " + messageID(s.from),
+	}
+	headers = append(headers, t.headers()...)
+	headers = append(headers,
 		"MIME-Version: 1.0",
 		`Content-Type: text/plain; charset="utf-8"`,
-	}
+	)
 	return strings.Join(headers, "\r\n") + "\r\n\r\n" + crlf(body)
 }
 
@@ -163,19 +166,6 @@ func headerValue(v string) string {
 // crlf gives the body the line ending mail is written in.
 func crlf(body string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(body, "\r\n", "\n"), "\n", "\r\n")
-}
-
-// messageID is this message's own name, which is what a mail client files replies and repeats
-// against. The domain is the sender's, since that is the one name in the message that belongs
-// to whoever is sending it.
-func messageID(from string) string {
-	var b [16]byte
-	rand.Read(b[:])
-	domain := "localhost"
-	if at := strings.LastIndex(from, "@"); at >= 0 && at+1 < len(from) {
-		domain = from[at+1:]
-	}
-	return fmt.Sprintf("<%x@%s>", b, domain)
 }
 
 // withoutSecret keeps the password out of what is written down. A failure ends up in amenbo's

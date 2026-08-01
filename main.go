@@ -23,10 +23,11 @@
 // sent on, events.go which events earn one, reader.go what amenbo is asked to fill a number in
 // with, state.go the per-project folder that whatever has to outlive one run is kept in, seen.go
 // the record of the events already taken in — what tells a redelivery from a first sight of one
-// — pending.go the lines waiting for the message that carries them, send.go the SMTP conversation
-// that carries it, wording.go the one line an event becomes in the language amenbo is set to,
-// subject.go the line a message opens with, and body.go what is written under it. The hook below
-// is the order those are put in.
+// — pending.go the lines waiting for the message that carries them, thread.go the one thread a
+// project's messages are gathered into, send.go the SMTP conversation that carries them,
+// wording.go the one line an event becomes in the language amenbo is set to, subject.go the line
+// a message opens with, and body.go what is written under it. The hook below is the order those
+// are put in.
 package main
 
 import (
@@ -176,7 +177,8 @@ func hook(in input) error {
 		// The message carries this event and nothing else, so it can say what happened.
 		subject = subjectForOne(in, d)
 	}
-	if err := sendMessage(cfg, subject, messageBody(d.project, lines)); err != nil {
+	t := threadFor(s, cfg.from)
+	if err := sendMessage(cfg, subject, messageBody(d.project, lines), t); err != nil {
 		// The lines stay where they are. amenbo does not hand a failed event back, so a message
 		// this could not deliver is one the next message has to carry.
 		return errors.Join(readErr, err)
@@ -185,6 +187,9 @@ func hook(in input) error {
 	if held {
 		dropPending(s)
 	}
+	// Both of these follow the send rather than lead it: a line forgotten early is lost, and a
+	// thread begun early is one nothing was ever delivered to.
+	t.began(s)
 	return readErr
 }
 
@@ -236,6 +241,9 @@ Events that come one after another arrive as one message: while amenbo says more
 line is written down instead of sent, and the event that ends the burst carries all of them. The
 subject then says how many rather than what happened. It is all written in the language you read
 amenbo in, which is amenbo's own setting and not one of this plugin's.
+
+Every message a project sends joins the thread its first one began, so a project sits in the
+mailbox as one conversation however its subjects read.
 
 Only the writes an AI drove are reported: the ones you drove yourself, you were there for.
 Which of them reach the mailbox is yours to choose — by default a task created, its status

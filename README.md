@@ -53,6 +53,14 @@ The body is plain text, with no HTML beside it: a list of moments has no heading
 anything from markup, it reads the same in every mail client, and one form to build is one form
 that can be wrong.
 
+**A project is one thread.** Every message a project sends names the message it first sent, in
+`In-Reply-To` and `References`, so a mail client gathers them into a single conversation. Subjects
+cannot do that job here: one says what happened and another says how many, and most clients thread
+on the subject matching — so a project reporting to you would arrive as a new thread every time the
+count changed. What is remembered for it is one name per project. If it was never written down, or
+will not read back, that message begins a thread of its own: one more thread in the mailbox, and
+nothing lost.
+
 **The message is written in the language you read amenbo in.** It follows amenbo's own language
 setting — nineteen languages, English for anything else — so the plugin has nothing to set for it.
 Statuses are named the way amenbo names them, and an event a future amenbo adds is reported under

@@ -23,6 +23,7 @@ type message struct {
 	settings settings
 	subject  string
 	body     string
+	thread   thread
 }
 
 // lines is what the body says happened, without the project it opens with.
@@ -64,8 +65,8 @@ func answerSend(t *testing.T, answer error) *[]message {
 	t.Helper()
 	var sent []message
 	was := sendMessage
-	sendMessage = func(s settings, subject, body string) error {
-		sent = append(sent, message{settings: s, subject: subject, body: body})
+	sendMessage = func(s settings, subject, body string, t thread) error {
+		sent = append(sent, message{settings: s, subject: subject, body: body, thread: t})
 		return answer
 	}
 	t.Cleanup(func() { sendMessage = was })
@@ -210,6 +211,57 @@ func TestHookKeepsTheLinesWhenTheSendFails(t *testing.T) {
 	}
 	if got := pending(s); len(got) != 1 {
 		t.Errorf("waiting = %v, want the line the failed send did not lose", got)
+	}
+}
+
+// A project is one conversation in the mailbox: the first message begins the thread, and every one
+// after it names that same first message rather than the one just before it.
+func TestHookGathersAProjectsMessagesIntoOneThread(t *testing.T) {
+	holding(t)
+	sent := holdMessages(t)
+
+	if err := hook(event(eventTaskDone)); err != nil {
+		t.Fatalf("hook: %v", err)
+	}
+	later := event(eventTaskDone)
+	later.At = "2026-08-01T09:00:01Z"
+	if err := hook(later); err != nil {
+		t.Fatalf("hook: %v", err)
+	}
+
+	if len(*sent) != 2 {
+		t.Fatalf("sent %d message(s), want one per event", len(*sent))
+	}
+	first, second := (*sent)[0], (*sent)[1]
+	if first.thread.root != "" {
+		t.Errorf("root = %q, want the first message to begin the thread", first.thread.root)
+	}
+	if second.thread.root != first.thread.id {
+		t.Errorf("root = %q, want the message the thread began with (%q)", second.thread.root, first.thread.id)
+	}
+}
+
+// A thread is begun by a message that arrived. One the server would not take is remembered by
+// nothing, so the next message begins the thread instead of answering a message nobody has.
+func TestHookBeginsNoThreadOnAMessageThatDidNotGoOut(t *testing.T) {
+	holding(t)
+	refuseMessages(t)
+	if err := hook(event(eventTaskCreated)); err == nil {
+		t.Fatalf("hook ended cleanly on a message the server would not take")
+	}
+	sent := holdMessages(t)
+
+	later := event(eventTaskDone)
+	later.At = "2026-08-01T09:00:01Z"
+	if err := hook(later); err != nil {
+		t.Fatalf("hook: %v", err)
+	}
+
+	if len(*sent) != 1 {
+		t.Fatalf("sent %d message(s), want the one carrying both", len(*sent))
+	}
+	if got := (*sent)[0].thread.root; got != "" {
+		t.Errorf("root = %q, want a thread begun by a message that arrived", got)
 	}
 }
 

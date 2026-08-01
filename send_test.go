@@ -203,6 +203,12 @@ func talkTo(s settings, host, port string, roots *x509.CertPool, fromStart bool)
 	}
 }
 
+// beginning is the thread a project's first message makes: a name of its own, and nothing yet to
+// answer. What a message says about a thread it joins is thread_test.go's.
+func beginning() thread {
+	return thread{id: messageID(sending().from)}
+}
+
 // sending is a configuration with everything a send needs, for the tests that vary one thing.
 func sending() settings {
 	return settings{
@@ -217,7 +223,7 @@ func TestSendHandsTheMessageOver(t *testing.T) {
 	server := &sink{}
 	host, port := server.start(t)
 
-	if err := talkTo(sending(), host, port, nil, false).send(compose(sending(), "Subject line", "the body")); err != nil {
+	if err := talkTo(sending(), host, port, nil, false).send(compose(sending(), "Subject line", "the body", beginning())); err != nil {
 		t.Fatalf("send: %v", err)
 	}
 
@@ -245,7 +251,7 @@ func TestSendGivesEveryRecipientTheMessage(t *testing.T) {
 	s := sending()
 	s.to = []string{"you@example.test", "them@example.test"}
 
-	if err := talkTo(s, host, port, nil, false).send(compose(s, "Subject line", "the body")); err != nil {
+	if err := talkTo(s, host, port, nil, false).send(compose(s, "Subject line", "the body", beginning())); err != nil {
 		t.Fatalf("send: %v", err)
 	}
 
@@ -265,7 +271,7 @@ func TestSendTakesTheUpgradeAServerOffers(t *testing.T) {
 	server := &sink{tlsCert: &cert}
 	host, port := server.start(t)
 
-	if err := talkTo(sending(), host, port, roots, false).send(compose(sending(), "s", "b")); err != nil {
+	if err := talkTo(sending(), host, port, roots, false).send(compose(sending(), "s", "b", beginning())); err != nil {
 		t.Fatalf("send: %v", err)
 	}
 
@@ -282,7 +288,7 @@ func TestSendTalksEncryptedFromTheFirstByte(t *testing.T) {
 	server := &sink{tlsCert: &cert, fromStart: true}
 	host, port := server.start(t)
 
-	if err := talkTo(sending(), host, port, roots, true).send(compose(sending(), "s", "b")); err != nil {
+	if err := talkTo(sending(), host, port, roots, true).send(compose(sending(), "s", "b", beginning())); err != nil {
 		t.Fatalf("send: %v", err)
 	}
 
@@ -317,7 +323,7 @@ func TestSendAuthenticatesOnlyForAnAccount(t *testing.T) {
 			s := sending()
 			s.user = tc.user
 
-			if err := talkTo(s, host, port, nil, false).send(compose(s, "s", "b")); err != nil {
+			if err := talkTo(s, host, port, nil, false).send(compose(s, "s", "b", beginning())); err != nil {
 				t.Fatalf("send: %v", err)
 			}
 			if got := strings.Contains(server.transcript(), "AUTH PLAIN"); got != tc.want {
@@ -331,7 +337,7 @@ func TestSendReportsAServerThatRefuses(t *testing.T) {
 	server := &sink{replies: map[string]string{"DATA": "451 not now"}}
 	host, port := server.start(t)
 
-	err := talkTo(sending(), host, port, nil, false).send(compose(sending(), "s", "b"))
+	err := talkTo(sending(), host, port, nil, false).send(compose(sending(), "s", "b", beginning()))
 	if err == nil {
 		t.Fatal("a refused message was reported as sent")
 	}
@@ -379,7 +385,7 @@ func TestSendKeepsThePasswordOutOfWhatIsWrittenDown(t *testing.T) {
 	server := &sink{replies: map[string]string{"AUTH": "535 rejected: " + s.password}}
 	host, port := server.start(t)
 
-	err := talkTo(s, host, port, nil, false).send(compose(s, "s", "b"))
+	err := talkTo(s, host, port, nil, false).send(compose(s, "s", "b", beginning()))
 	if err == nil {
 		t.Fatal("a rejected account was reported as sent")
 	}
@@ -391,7 +397,7 @@ func TestSendKeepsThePasswordOutOfWhatIsWrittenDown(t *testing.T) {
 func TestComposeKeepsAHeaderOnItsOwnLine(t *testing.T) {
 	s := sending()
 
-	msg := compose(s, "done\r\nBcc: elsewhere@example.test", "the body")
+	msg := compose(s, "done\r\nBcc: elsewhere@example.test", "the body", beginning())
 
 	if strings.Contains(msg, "\r\nBcc:") {
 		t.Errorf("a line break in the subject started a header of its own:\n%s", msg)
@@ -402,7 +408,7 @@ func TestComposeKeepsAHeaderOnItsOwnLine(t *testing.T) {
 }
 
 func TestComposeWritesTheBodyInTheLineEndingMailUses(t *testing.T) {
-	msg := compose(sending(), "s", "one\ntwo")
+	msg := compose(sending(), "s", "one\ntwo", beginning())
 
 	if !strings.Contains(msg, "one\r\ntwo") {
 		t.Errorf("the body kept a bare newline:\n%q", msg)
@@ -412,16 +418,19 @@ func TestComposeWritesTheBodyInTheLineEndingMailUses(t *testing.T) {
 	}
 }
 
-func TestMessageIDIsThisMessagesOwnName(t *testing.T) {
-	one, two := messageID("amenbo@example.test"), messageID("amenbo@example.test")
+func TestComposeWritesTheMessageIntoItsThread(t *testing.T) {
+	msg := compose(sending(), "s", "b", thread{id: "<two@example.test>", root: "<one@example.test>"})
 
-	if one == two {
-		t.Error("two messages were given the same name")
+	for _, want := range []string{
+		"Message-ID: <two@example.test>\r\n",
+		"In-Reply-To: <one@example.test>\r\n",
+		"References: <one@example.test>\r\n",
+	} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("the message is missing %q:\n%s", want, msg)
+		}
 	}
-	if !strings.HasSuffix(one, "@example.test>") || !strings.HasPrefix(one, "<") {
-		t.Errorf("messageID = %q, want it named under the sender's domain", one)
-	}
-	if got := messageID("nobody"); !strings.HasSuffix(got, "@localhost>") {
-		t.Errorf("messageID = %q, want a name even without a domain to use", got)
+	if !strings.Contains(msg, "MIME-Version: 1.0") {
+		t.Errorf("the headers that follow the thread's were lost:\n%s", msg)
 	}
 }
