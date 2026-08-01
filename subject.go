@@ -36,9 +36,13 @@ const ellipsis = "…"
 // written from — a subject says what happened, and the line says who did it to what.
 type subjectWording struct {
 	events map[string]string
-	// many says how many, with {n} standing for the count. It is only ever used for two or
-	// more, since one event is said in full.
+	// many says how many, with {n} standing for the count.
 	many string
+	// one is what many says for a count of one, in the languages that say it differently — a
+	// message carrying a single event does not always say it in full, since the run that sends
+	// it is not always the run the event arrived on. Left empty by every language a numeral
+	// changes nothing in, which is most of them outside Europe.
+	one string
 }
 
 // subjectWords is keyed by the same language codes the sentences are, and a test holds the two
@@ -47,6 +51,7 @@ type subjectWording struct {
 var subjectWords = map[string]subjectWording{
 	"en": {
 		many: "{n} updates",
+		one:  "{n} update",
 		events: map[string]string{
 			eventTaskCreated: "Task created", eventTaskStatusChanged: "Task moved to {status}",
 			eventTaskDone: "Task finished", eventTaskRejected: "Task decided against",
@@ -58,6 +63,7 @@ var subjectWords = map[string]subjectWording{
 	},
 	"de": {
 		many: "{n} Änderungen",
+		one:  "{n} Änderung",
 		events: map[string]string{
 			eventTaskCreated: "Aufgabe erstellt", eventTaskStatusChanged: "Aufgabe auf {status}",
 			eventTaskDone: "Aufgabe abgeschlossen", eventTaskRejected: "Aufgabe verworfen",
@@ -69,6 +75,7 @@ var subjectWords = map[string]subjectWording{
 	},
 	"es": {
 		many: "{n} novedades",
+		one:  "{n} novedad",
 		events: map[string]string{
 			eventTaskCreated: "Tarea creada", eventTaskStatusChanged: "Tarea a {status}",
 			eventTaskDone: "Tarea terminada", eventTaskRejected: "Tarea descartada",
@@ -80,6 +87,7 @@ var subjectWords = map[string]subjectWording{
 	},
 	"fr": {
 		many: "{n} mises à jour",
+		one:  "{n} mise à jour",
 		events: map[string]string{
 			eventTaskCreated: "Tâche créée", eventTaskStatusChanged: "Tâche à {status}",
 			eventTaskDone: "Tâche terminée", eventTaskRejected: "Tâche écartée",
@@ -113,6 +121,7 @@ var subjectWords = map[string]subjectWording{
 	},
 	"it": {
 		many: "{n} aggiornamenti",
+		one:  "{n} aggiornamento",
 		events: map[string]string{
 			eventTaskCreated: "Attività creata", eventTaskStatusChanged: "Attività a {status}",
 			eventTaskDone: "Attività completata", eventTaskRejected: "Attività scartata",
@@ -146,6 +155,7 @@ var subjectWords = map[string]subjectWording{
 	},
 	"nl": {
 		many: "{n} updates",
+		one:  "{n} update",
 		events: map[string]string{
 			eventTaskCreated: "Taak aangemaakt", eventTaskStatusChanged: "Taak op {status}",
 			eventTaskDone: "Taak afgerond", eventTaskRejected: "Taak vervallen",
@@ -157,6 +167,7 @@ var subjectWords = map[string]subjectWording{
 	},
 	"pl": {
 		many: "Aktualizacje: {n}",
+		one:  "Aktualizacja: {n}",
 		events: map[string]string{
 			eventTaskCreated: "Utworzono zadanie", eventTaskStatusChanged: "Zadanie: {status}",
 			eventTaskDone: "Ukończono zadanie", eventTaskRejected: "Odrzucono zadanie",
@@ -168,6 +179,7 @@ var subjectWords = map[string]subjectWording{
 	},
 	"pt-BR": {
 		many: "{n} atualizações",
+		one:  "{n} atualização",
 		events: map[string]string{
 			eventTaskCreated: "Tarefa criada", eventTaskStatusChanged: "Tarefa para {status}",
 			eventTaskDone: "Tarefa concluída", eventTaskRejected: "Tarefa recusada",
@@ -179,6 +191,7 @@ var subjectWords = map[string]subjectWording{
 	},
 	"ru": {
 		many: "Обновления: {n}",
+		one:  "Обновление: {n}",
 		events: map[string]string{
 			eventTaskCreated: "Создана задача", eventTaskStatusChanged: "Задача: {status}",
 			eventTaskDone: "Задача завершена", eventTaskRejected: "Задача отклонена",
@@ -281,12 +294,21 @@ func subjectForOne(in input, d details) string {
 
 // subjectForMany writes the subject of a message carrying a burst. What the events have in common
 // by then is the project and how many of them there were, so that is what it says.
+//
+// It counts one as readily as five. A message carries a single event without this one being able
+// to say it in full whenever the run that sends it is not the run the event arrived on — a burst
+// ending on an event nobody asked to hear about is exactly that — so the count has to read as well
+// at one as it does above it.
 func subjectForMany(d details, n int) string {
-	many := subjectWordingFor(d.language).many
-	if many == "" {
-		many = subjectWords[defaultLanguage].many
+	sw := subjectWordingFor(d.language)
+	count := sw.many
+	if n == 1 && sw.one != "" {
+		count = sw.one
 	}
-	return headerReady(subjectOf(d.project, strings.ReplaceAll(many, "{n}", strconv.Itoa(n))))
+	if count == "" {
+		count = subjectWords[defaultLanguage].many
+	}
+	return headerReady(subjectOf(d.project, strings.ReplaceAll(count, "{n}", strconv.Itoa(n))))
 }
 
 // subjectOf puts the project in front of what happened, and cuts the project — and only the

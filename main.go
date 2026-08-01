@@ -23,20 +23,16 @@
 // sent on, events.go which events earn one, reader.go what amenbo is asked to fill a number in
 // with, state.go the per-project folder that whatever has to outlive one run is kept in, seen.go
 // the record of the events already taken in — what tells a redelivery from a first sight of one
-// — send.go the SMTP conversation that carries a message, wording.go the one line an event
-// becomes in the language amenbo is set to, subject.go the line a message opens with, and body.go
-// what is written under it. What is left is the hook itself: gathering a burst of events into one
-// message and handing it over is what is still to be written, and until it is nothing calls the
-// last five, so a hook run today
-// reads its event, asks amenbo what the number names, says on stderr that it cannot take it
-// anywhere yet, and ends cleanly. A run whose required settings are not filled in ends instead
-// on the error naming them, and one whose read did not come back ends non-zero having said what
-// it could — the two failures this build already reports for real.
+// — pending.go the lines waiting for the message that carries them, send.go the SMTP conversation
+// that carries it, wording.go the one line an event becomes in the language amenbo is set to,
+// subject.go the line a message opens with, and body.go what is written under it. The hook below
+// is the order those are put in.
 package main
 
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -120,19 +116,22 @@ func readInput(f *os.File) input {
 	return in
 }
 
-// hook is what one event comes to. It holds the judgements that do not depend on how a message
-// is worded or carried — the contract it is written to, who drove the write, whether the event
-// is one the user asked to hear about, and whether the settings it would be sent on are there —
-// and stops there for now: what to say is not written yet, so an event that gets this far leaves
-// a line in amenbo's execution log instead of a message in a mailbox.
+// hook is what one event comes to, from the judgement that it is worth reporting to the message
+// that reports it.
 //
 // The order is what makes a quiet run quiet. An event this plugin is not going to report is no
 // reason to complain that it is unconfigured, and neither is one it could not have sent — so the
 // settings are read after the event has earned a message, and amenbo is asked about the record
 // only once there is somewhere to send what it says.
 //
-// A read that will not come back does not stop the run: what came back is used and the failure
-// is answered with, so the exit code puts it in the execution log without costing the user the
+// Whether the event adds a line and whether a message goes out are separate questions, and
+// answering them separately is what keeps a line from being stranded. A run says nothing of its own
+// when the user drove the write, when nobody asked to hear about the event, or when it is a second
+// copy of one already taken in — and any of those can be the run amenbo ends a burst with. Held
+// lines have to leave on it all the same, or they wait for an event that may be days away.
+//
+// A read that will not come back does not stop the run: what came back is used and the failure is
+// answered with, so the exit code puts it in the execution log without costing the user the
 // message.
 func hook(in input) error {
 	if in.Event == "" {
@@ -141,20 +140,52 @@ func hook(in input) error {
 	if in.V != contractVersion {
 		return fmt.Errorf("payload contract v%d is not the v%d this build reads", in.V, contractVersion)
 	}
-	if in.Actor != actorAI {
+
+	s := stateFromEnv()
+	reported := in.Actor == actorAI && selectedEvents(in.Config)[in.Event]
+	fresh := reported && takeIn(s, in)
+	lines := pending(s)
+	if !fresh && (len(lines) == 0 || queueRemaining() > 0) {
+		// Nothing of this run's own to say, and nothing waiting that this run has to carry.
+		// Answering here is what keeps an event nobody asked about from being the one that
+		// complains the plugin is unconfigured.
 		return nil
 	}
-	if !selectedEvents(in.Config)[in.Event] {
-		return nil
-	}
+
 	cfg, err := loadConfig(in.Config)
 	if err != nil {
 		return err
 	}
-	d, err := lookup(in)
-	logf("%s: %s %s (%s) in %s is for %s — no message is sent by this build",
-		pluginName, in.Event, d.ref, d.title, d.project, strings.Join(cfg.to, ", "))
-	return err
+
+	var d details
+	var readErr error
+	held := true
+	if fresh {
+		d, readErr = lookup(in)
+		lines, held = keepPending(s, lines, eventLine(in, d))
+	} else {
+		d, readErr = surroundings()
+	}
+	if held && queueRemaining() > 0 {
+		// The burst is not over. The lines are on disk, and the run amenbo ends it with sends them.
+		return readErr
+	}
+
+	subject := subjectForMany(d, len(lines))
+	if fresh && len(lines) == 1 {
+		// The message carries this event and nothing else, so it can say what happened.
+		subject = subjectForOne(in, d)
+	}
+	if err := sendMessage(cfg, subject, messageBody(d.project, lines)); err != nil {
+		// The lines stay where they are. amenbo does not hand a failed event back, so a message
+		// this could not deliver is one the next message has to carry.
+		return errors.Join(readErr, err)
+	}
+	logf("%s: %d event(s) reported to %s", pluginName, len(lines), strings.Join(cfg.to, ", "))
+	if held {
+		dropPending(s)
+	}
+	return readErr
 }
 
 func main() {
@@ -193,8 +224,8 @@ func usage() {
 This plugin is not called. amenbo starts it when an event fires, and it reports the event by
 email, under a heading naming the project it came from.
 
-This build sends nothing: gathering a burst of events into one message and handing it over is not
-written yet, so an event reaches 'amenbo plugin log mail' and stops there.
+Events that come one after another arrive as one message: while amenbo says more is waiting, each
+line is written down instead of sent, and the event that ends the burst carries all of them.
 
 Only the writes an AI drove are reported: the ones you drove yourself, you were there for.
 Which of them reach the mailbox is yours to choose — by default a task created, its status

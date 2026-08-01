@@ -14,24 +14,37 @@ Three things decide what arrives.
   default is a task created, its status moved, and either terminal — done or decided against.
   Ticking none of them is an answer too: the plugin stays switched on and reports nothing.
 
+## A burst is one message
+
+One thing you do is often many events. Deleting a project, or clearing out the tasks that piled up
+in it, is one decision to you and a dozen writes to amenbo — and a dozen messages about one
+decision is not a notification, it is an interruption repeated. So a run does not send what it is
+handed: while amenbo says more is waiting for this project, each line is written down, and the run
+that ends the burst carries all of them in a single message.
+
+What that costs is honesty about the two edges.
+
+- **A line waits on disk, not in memory.** A run amenbo started and nobody waited on can end at any
+  moment, and what it was only holding in mind ends with it. Two hundred lines is as many as wait
+  at once: nothing sent for that long is a plugin configured wrongly rather than a burst, and the
+  oldest lines give way rather than the disk filling up quietly.
+- **A failed send keeps its lines.** amenbo does not hand a failed event back for a second attempt,
+  so a message that did not go out is one the next message carries. It arrives late instead of
+  never, and it can arrive twice — the alternative is a notification nobody gets.
+
+Lines wait per project, so what one project holds is never posted to the mailbox another one names.
+A run with nowhere to write cannot hold anything back, and reports its event on its own instead.
+
 ## Where this is
 
-**The skeleton, not the plugin.** What is here is the repository's shape — the build, the gate,
-the release, the manifest — and the plugin's entry point, with the payload contract it reads, the
-events it reports, the settings it sends on, what it asks amenbo to fill a number in with, the
-line each event becomes in the language you read amenbo in, the subject and body of a message, and
-the SMTP conversation that would carry one. What is left is the hook itself: gathering a burst of
-events into one message and handing it over is not written yet, so a hook run today decides
-whether the event has earned a message, asks amenbo what the number names, works out where it
-would go, and leaves a line in `amenbo plugin log mail` instead of sending anything.
+**Nothing has been cut yet.** `dev/manifest.json` carries placeholder digests (all zeroes) against
+a `v1` that does not exist. They are replaced from the release run's summary — never transcribed by
+hand — before the catalog entry quotes them.
 
-Two failures it already reports for real: a run whose required settings are empty ends on the
-error naming them, and one whose read did not come back ends non-zero having said what it could
-— a message that names a number is worth more than no message at all.
-
-`dev/manifest.json` carries placeholder digests (all zeroes) against a `v1` that has not been cut.
-They are replaced from the release run's summary — never transcribed by hand — before the catalog
-entry quotes them.
+Two failures the plugin reports for real: a run whose required settings are empty ends on the error
+naming them, and one whose read did not come back ends non-zero having said what it could — a
+message that names a number is worth more than no message at all. Why nothing arrived is in
+`amenbo plugin log mail`, one line per run.
 
 ## Settings
 

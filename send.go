@@ -35,6 +35,10 @@ func tlsFromTheStart(port string) bool {
 	return port == implicitTLSPort
 }
 
+// sendMessage is how a run hands a message over, indirected so a test of what a hook decides can
+// keep the message instead of standing up a server to take it.
+var sendMessage = send
+
 // send hands one message to the server the settings name.
 //
 // The subject arrives ready to be a header — encoded, and cut to length — and the body ready to

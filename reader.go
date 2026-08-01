@@ -96,15 +96,20 @@ type details struct {
 // failures are joined and answered with, so the run still ends non-zero and the execution log
 // says which read did not work.
 func lookup(in input) (details, error) {
+	d, err := surroundings()
+	rec, recErr := lookupRecord(in)
+	d.record = rec
+	return d, errors.Join(recErr, err)
+}
+
+// surroundings is what a message needs about where it comes from: the project it is about, and the
+// language and names it is written in. It asks nothing about a record, which is what a run carrying
+// only what earlier runs held needs — its own event is not named in the message, so reading it back
+// would be a question asked for nothing and an exit code spent on the answer.
+func surroundings() (details, error) {
 	var errs []error
 
 	d := details{}
-	rec, err := lookupRecord(in)
-	if err != nil {
-		errs = append(errs, err)
-	}
-	d.record = rec
-
 	project, err := lookupProject(os.Getenv(envReach))
 	if err != nil {
 		errs = append(errs, err)

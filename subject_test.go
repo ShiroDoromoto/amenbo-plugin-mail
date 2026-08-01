@@ -89,6 +89,38 @@ func TestSubjectForManySaysHowMany(t *testing.T) {
 	}
 }
 
+// A message carrying one event is not always one this can say in full — a burst ending on an event
+// nobody asked to hear about is sent by a run that never learned what its own event named — so the
+// count is written the way the language writes one of something.
+func TestSubjectForManyCountsOneAsTheLanguageDoes(t *testing.T) {
+	for _, tc := range []struct {
+		language, want string
+	}{
+		{"en", "[amenbo] 1 update"},
+		{"de", "[amenbo] 1 Änderung"},
+		{"ja", "[amenbo] 更新 1件"},
+	} {
+		t.Run(tc.language, func(t *testing.T) {
+			d := spoken(tc.language)
+			d.project = "amenbo"
+
+			if got := decoded(t, subjectForMany(d, 1)); got != tc.want {
+				t.Errorf("subjectForMany = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// A singular is only ever the plural in another form, so one that says nothing about how many
+// would leave a reader with a subject that does not count at all.
+func TestEverySingularStillSaysHowMany(t *testing.T) {
+	for language, sw := range subjectWords {
+		if sw.one != "" && !strings.Contains(sw.one, "{n}") {
+			t.Errorf("%s says %q for a single event, which never says how many", language, sw.one)
+		}
+	}
+}
+
 func TestSubjectNamesTheSenderWhenTheProjectCouldNotBeRead(t *testing.T) {
 	for _, project := range []string{"", "   "} {
 		if got := subjectOf(project, "Task finished "+sampleRef); !strings.HasPrefix(got, "["+fallbackProject+"]") {
