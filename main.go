@@ -19,9 +19,11 @@
 // running `amenbo task show <id> --json`. amenbo names the store and the window it may be
 // read through in the environment; this plugin passes neither on and adds nothing of its own.
 //
-// This is the entry point and the payload contract, and nothing else yet: the wording of a
-// message and the SMTP conversation that carries it are still to be written, so a hook run
-// today reads its event, says on stderr that it has nowhere to take it, and ends cleanly.
+// Here are the entry point and the payload contract; state.go has the per-project folder that
+// whatever has to outlive one run is kept in. The wording of a message and the SMTP
+// conversation that carries it are still to be written — and so nothing yet has anything to
+// remember — so a hook run today reads its event, says on stderr that it has nowhere to take
+// it, and ends cleanly.
 package main
 
 import (
