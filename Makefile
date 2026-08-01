@@ -38,9 +38,10 @@ endif
 	mkdir -p "$(AMENBO_BASE)/plugins/$(BIN)"
 	cp $(BIN) "$(AMENBO_BASE)/plugins/$(BIN)/$(BIN)"
 	cp dev/manifest.json "$(AMENBO_BASE)/plugins/$(BIN)/manifest.json"
-	@echo "installed into $(AMENBO_BASE)/plugins/$(BIN) — fill in where it sends from and to, and enable it:"
+	@echo "installed into $(AMENBO_BASE)/plugins/$(BIN) — fill in the account it sends through, and enable it:"
 	@echo "  amenbo plugin config set $(BIN) smtp_host <host>"
-	@echo "  amenbo plugin config set $(BIN) to <address>"
+	@echo "  amenbo plugin config set $(BIN) smtp_user <account>"
+	@echo "  printf %s '<password>' | amenbo plugin config set $(BIN) smtp_password -"
 	@echo "  amenbo plugin enable $(BIN)"
 #
 # The release build: every asset the catalog entry points at, plus the digests it quotes. The

@@ -36,10 +36,10 @@
   "config": [
     { "key": "smtp_host", "label": "SMTP host", "required": true },
     { "key": "smtp_port", "label": "SMTP port", "default": "587" },
-    { "key": "smtp_user", "label": "SMTP username" },
-    { "key": "smtp_password", "label": "SMTP password", "secret": true },
-    { "key": "from", "label": "Sender address", "required": true },
-    { "key": "to", "label": "Where to report to", "required": true },
+    { "key": "smtp_user", "label": "SMTP username", "required": true },
+    { "key": "smtp_password", "label": "SMTP password", "required": true, "secret": true },
+    { "key": "from", "label": "Sender address (defaults to the account)" },
+    { "key": "to", "label": "Where to report to (defaults to the account)" },
     {
       "key": "events",
       "label": "What to report",

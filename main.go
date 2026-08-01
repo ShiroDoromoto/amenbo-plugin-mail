@@ -19,9 +19,11 @@
 // running `amenbo task show <id> --json`. amenbo names the store and the window it may be
 // read through in the environment; this plugin passes neither on and adds nothing of its own.
 //
-// This is the entry point and the payload contract, and nothing else yet: the wording of a
-// message and the SMTP conversation that carries it are still to be written, so a hook run
-// today reads its event, says on stderr that it has nowhere to take it, and ends cleanly.
+// This is the entry point, the payload contract, and the settings a run sends with: the wording
+// of a message and the SMTP conversation that carries it are still to be written, so a hook run
+// today reads its event, works out where it would go, says on stderr that it cannot take it
+// there yet, and ends cleanly. A run whose required settings are not filled in ends instead on
+// the error naming them, which is the one failure this build already reports for real.
 package main
 
 import (
@@ -110,10 +112,14 @@ func readInput(f *os.File) input {
 	return in
 }
 
-// hook is what one event comes to. It holds the two judgements that do not depend on how a
-// message is worded or carried — the contract it is written to, and who drove the write — and
-// stops there for now: what to say and where to send it is not written yet, so an event that
-// gets this far leaves a line in amenbo's execution log instead of a message in a mailbox.
+// hook is what one event comes to. It holds the judgements that do not depend on how a message
+// is worded or carried — the contract it is written to, who drove the write, and whether the
+// settings it would be sent on are there — and stops there for now: what to say is not written
+// yet, so an event that gets this far leaves a line in amenbo's execution log instead of a
+// message in a mailbox.
+//
+// The settings are read after the actor, not before: an event this plugin would not report is
+// no reason to complain that it is unconfigured.
 func hook(in input) error {
 	if in.Event == "" {
 		return nil
@@ -124,7 +130,11 @@ func hook(in input) error {
 	if in.Actor != actorAI {
 		return nil
 	}
-	logf("%s: %s on %d has nowhere to go yet — no message is sent by this build", pluginName, in.Event, in.ID)
+	cfg, err := loadConfig(in.Config)
+	if err != nil {
+		return err
+	}
+	logf("%s: %s on %d is for %s — no message is sent by this build", pluginName, in.Event, in.ID, strings.Join(cfg.to, ", "))
 	return nil
 }
 
@@ -171,19 +181,20 @@ Only the writes an AI drove are reported: the ones you drove yourself, you were 
 Which of them reach the mailbox is yours to choose — by default a task created, its status
 moved, and either terminal (done or decided against).
 
-Settings:
+Settings — three are required, and the rest are derived from them:
   smtp_host      the SMTP server to hand the message to (required)
-  smtp_port      the port on it (defaults to 587)
-  smtp_user      the account to authenticate as, where the server asks for one
-  smtp_password  that account's password (secret)
-  from           the address the message is sent from (required)
-  to             the address it is sent to (required)
+  smtp_user      the account to authenticate as (required)
+  smtp_password  that account's password (required, secret)
+  smtp_port      the port on the server (defaults to 587)
+  from           the address the message is sent from (defaults to smtp_user)
+  to             where it is sent (defaults to smtp_user; comma-separated for several)
   events         what to report, from the eleven amenbo fires (defaults to the four above;
                  choosing none is honoured, and reports nothing)
 
-Every setting belongs to a project, so the value is which mailbox that project reports to.
-Fill them in with 'amenbo plugin config set mail to <address>', then switch the plugin on
-for the project with 'amenbo plugin enable mail'.
+Fill in the three and the plugin reports to the account's own mailbox; 'to' is what sends it
+somewhere else. Every setting belongs to a project, so the value is which mailbox that project
+reports to. Fill them in with 'amenbo plugin config set mail smtp_host <host>', then switch the
+plugin on for the project with 'amenbo plugin enable mail'.
 
 Why nothing arrived is in 'amenbo plugin log mail' — one line per run, and the diagnostics
 of any run that did not end cleanly.`)

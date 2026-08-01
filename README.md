@@ -16,9 +16,11 @@ Three things decide what arrives.
 ## Where this is
 
 **The skeleton, not the plugin.** What is here is the repository's shape — the build, the gate,
-the release, the manifest, and the plugin's entry point with the payload contract it reads. The
-wording of a message and the SMTP conversation that carries it are not written yet, so a hook run
-today reads its event and leaves a line in `amenbo plugin log mail` instead of sending anything.
+the release, the manifest — and the plugin's entry point, with the payload contract it reads and
+the settings it sends on. The wording of a message and the SMTP conversation that carries it are
+not written yet, so a hook run today works out where the event would go and leaves a line in
+`amenbo plugin log mail` instead of sending anything. A run whose required settings are empty
+ends on the error naming them, which is the one failure this build already reports for real.
 
 `dev/manifest.json` carries placeholder digests (all zeroes) against a `v1` that has not been cut.
 They are replaced from the release run's summary — never transcribed by hand — before the catalog
@@ -26,15 +28,24 @@ entry quotes them.
 
 ## Settings
 
+Three are required, and the rest are derived from them.
+
 | Key | What it is |
 | --- | --- |
 | `smtp_host` | the SMTP server to hand the message to (required) |
-| `smtp_port` | the port on it (defaults to 587) |
-| `smtp_user` | the account to authenticate as, where the server asks for one |
-| `smtp_password` | that account's password (secret) |
-| `from` | the address the message is sent from (required) |
-| `to` | the address it is sent to (required) |
+| `smtp_user` | the account to authenticate as (required) |
+| `smtp_password` | that account's password (required, secret) |
+| `smtp_port` | the port on the server (defaults to 587) |
+| `from` | the address the message is sent from (defaults to `smtp_user`) |
+| `to` | where it is sent (defaults to `smtp_user`; comma-separated for several) |
 | `events` | what to report, from the eleven amenbo fires |
+
+An address alone cannot send anything — a message goes through a server, and being someone's
+address grants no right to hand one to it — so an account of your own is unavoidable. Once it is
+there, the rest follows from it: `from` is the account, because a provider generally refuses a
+message claiming to be from anyone else, and `to` is the account too, because the person who
+reads a project's notifications first is the one whose account it is. Fill in three settings and
+you are reporting to yourself; fill in `to` to report somewhere else, or to several places.
 
 Run the config commands from the folder amenbo is bound to: the settings and the switch are that
 project's. The password goes in through `-`, which reads it from stdin — written as an argument it
@@ -42,9 +53,9 @@ would sit in the shell's history and in anything reading the process list.
 
 ```sh
 amenbo plugin config set mail smtp_host smtp.example.com
-amenbo plugin config set mail from amenbo@example.com
-amenbo plugin config set mail to you@example.com
+amenbo plugin config set mail smtp_user you@example.com
 printf %s '…' | amenbo plugin config set mail smtp_password -
+amenbo plugin config set mail to someone@example.com,someone-else@example.com   # optional
 amenbo plugin enable mail            # installing never runs anything; this is the consent
 ```
 
