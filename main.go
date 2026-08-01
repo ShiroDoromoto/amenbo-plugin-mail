@@ -20,9 +20,11 @@
 // read through in the environment; this plugin passes neither on and adds nothing of its own.
 //
 // Here are the entry point and the payload contract; config.go has the settings a message is
-// sent on, and state.go the per-project folder that whatever has to outlive one run is kept in.
-// The wording of a message and the SMTP conversation that carries it are still to be written —
-// and so nothing yet has anything to remember — so a hook run today reads its event, works out
+// sent on, state.go the per-project folder that whatever has to outlive one run is kept in, and
+// seen.go the record of the events already taken in, which is what tells a redelivery from a
+// first sight of one. The wording of a message and the SMTP conversation that carries it are
+// still to be written — and until they are, nothing calls those last two — so a hook run today
+// reads its event, works out
 // where it would go, says on stderr that it cannot take it there yet, and ends cleanly. A run
 // whose required settings are not filled in ends instead on the error naming them, which is the
 // one failure this build already reports for real.
