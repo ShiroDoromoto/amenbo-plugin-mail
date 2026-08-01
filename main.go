@@ -20,11 +20,11 @@
 // read through in the environment; this plugin passes neither on and adds nothing of its own.
 //
 // Here are the entry point and the payload contract; config.go has the settings a message is
-// sent on, state.go the per-project folder that whatever has to outlive one run is kept in, and
-// seen.go the record of the events already taken in, which is what tells a redelivery from a
-// first sight of one. The wording of a message and the SMTP conversation that carries it are
-// still to be written — and until they are, nothing calls those last two — so a hook run today
-// reads its event, works out
+// sent on, events.go which events earn one, state.go the per-project folder that whatever has
+// to outlive one run is kept in, and seen.go the record of the events already taken in, which
+// is what tells a redelivery from a first sight of one. The wording of a message and the SMTP
+// conversation that carries it are still to be written — and until they are, nothing calls
+// those last two — so a hook run today reads its event, works out
 // where it would go, says on stderr that it cannot take it there yet, and ends cleanly. A run
 // whose required settings are not filled in ends instead on the error naming them, which is the
 // one failure this build already reports for real.
@@ -117,13 +117,14 @@ func readInput(f *os.File) input {
 }
 
 // hook is what one event comes to. It holds the judgements that do not depend on how a message
-// is worded or carried — the contract it is written to, who drove the write, and whether the
-// settings it would be sent on are there — and stops there for now: what to say is not written
-// yet, so an event that gets this far leaves a line in amenbo's execution log instead of a
-// message in a mailbox.
+// is worded or carried — the contract it is written to, who drove the write, whether the event
+// is one the user asked to hear about, and whether the settings it would be sent on are there —
+// and stops there for now: what to say is not written yet, so an event that gets this far leaves
+// a line in amenbo's execution log instead of a message in a mailbox.
 //
-// The settings are read after the actor, not before: an event this plugin would not report is
-// no reason to complain that it is unconfigured.
+// The order is what makes a quiet run quiet. An event this plugin is not going to report is no
+// reason to complain that it is unconfigured, so the settings are read last — after the event
+// has already earned a message.
 func hook(in input) error {
 	if in.Event == "" {
 		return nil
@@ -132,6 +133,9 @@ func hook(in input) error {
 		return fmt.Errorf("payload contract v%d is not the v%d this build reads", in.V, contractVersion)
 	}
 	if in.Actor != actorAI {
+		return nil
+	}
+	if !selectedEvents(in.Config)[in.Event] {
 		return nil
 	}
 	cfg, err := loadConfig(in.Config)

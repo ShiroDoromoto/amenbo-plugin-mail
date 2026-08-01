@@ -12,15 +12,17 @@ Three things decide what arrives.
   mailboxes; there is no address anywhere in the plugin.
 - **Which events, you choose.** `events` is a list you tick, from everything amenbo fires. Its
   default is a task created, its status moved, and either terminal — done or decided against.
+  Ticking none of them is an answer too: the plugin stays switched on and reports nothing.
 
 ## Where this is
 
 **The skeleton, not the plugin.** What is here is the repository's shape — the build, the gate,
-the release, the manifest — and the plugin's entry point, with the payload contract it reads and
-the settings it sends on. The wording of a message and the SMTP conversation that carries it are
-not written yet, so a hook run today works out where the event would go and leaves a line in
-`amenbo plugin log mail` instead of sending anything. A run whose required settings are empty
-ends on the error naming them, which is the one failure this build already reports for real.
+the release, the manifest — and the plugin's entry point, with the payload contract it reads, the
+events it reports, and the settings it sends on. The wording of a message and the SMTP
+conversation that carries it are not written yet, so a hook run today decides whether the event
+has earned a message, works out where it would go, and leaves a line in `amenbo plugin log mail`
+instead of sending anything. A run whose required settings are empty ends on the error naming
+them, which is the one failure this build already reports for real.
 
 `dev/manifest.json` carries placeholder digests (all zeroes) against a `v1` that has not been cut.
 They are replaced from the release run's summary — never transcribed by hand — before the catalog
@@ -38,7 +40,7 @@ Three are required, and the rest are derived from them.
 | `smtp_port` | the port on the server (defaults to 587) |
 | `from` | the address the message is sent from (defaults to `smtp_user`) |
 | `to` | where it is sent (defaults to `smtp_user`; comma-separated for several) |
-| `events` | what to report, from the eleven amenbo fires |
+| `events` | what to report, from the eleven amenbo fires (`none` to report nothing) |
 
 An address alone cannot send anything — a message goes through a server, and being someone's
 address grants no right to hand one to it — so an account of your own is unavoidable. Once it is
