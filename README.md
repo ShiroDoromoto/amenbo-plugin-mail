@@ -19,9 +19,10 @@ Three things decide what arrives.
 **The skeleton, not the plugin.** What is here is the repository's shape — the build, the gate,
 the release, the manifest — and the plugin's entry point, with the payload contract it reads, the
 events it reports, the settings it sends on, what it asks amenbo to fill a number in with, the
-line each event becomes in the language you read amenbo in, and the SMTP conversation that would
-carry a message. A whole message — a subject, and a body of those lines — is not assembled yet,
-and until it is nothing hands one over, so a hook run today decides whether the event has earned
+line each event becomes in the language you read amenbo in, the subject a message opens with, and
+the SMTP conversation that would carry one. The body those lines are gathered into is not
+assembled yet, and until it is nothing hands one over, so a hook run today decides whether the
+event has earned
 a message, asks amenbo what the number names, works out where it would go, and leaves a line in
 `amenbo plugin log mail` instead of sending anything.
 

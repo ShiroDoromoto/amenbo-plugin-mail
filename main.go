@@ -23,10 +23,10 @@
 // sent on, events.go which events earn one, reader.go what amenbo is asked to fill a number in
 // with, state.go the per-project folder that whatever has to outlive one run is kept in, seen.go
 // the record of the events already taken in — what tells a redelivery from a first sight of one
-// — send.go the SMTP conversation that carries a message, and wording.go the one line an event
-// becomes, in the language amenbo is set to. What a whole message is — a subject, and a body of
-// those lines — is what is still to be written, and until it is nothing calls the last four, so a
-// hook run today
+// — send.go the SMTP conversation that carries a message, wording.go the one line an event
+// becomes in the language amenbo is set to, and subject.go the line a message opens with. The
+// body those lines are gathered into is what is still to be written, and until it is nothing
+// calls the last five, so a hook run today
 // reads its event, asks amenbo what the number names, says on stderr that it cannot take it
 // anywhere yet, and ends cleanly. A run whose required settings are not filled in ends instead
 // on the error naming them, and one whose read did not come back ends non-zero having said what
@@ -192,9 +192,9 @@ func usage() {
 This plugin is not called. amenbo starts it when an event fires, and it reports the event by
 email, under a heading naming the project it came from.
 
-This build sends nothing: a whole message — a subject, and a body of one line per event — is not
-assembled yet, and until it is nothing hands one over, so an event reaches 'amenbo plugin log
-mail' and stops there.
+This build sends nothing: the body a message carries — one line per event — is not assembled yet,
+and until it is nothing hands one over, so an event reaches 'amenbo plugin log mail' and stops
+there.
 
 Only the writes an AI drove are reported: the ones you drove yourself, you were there for.
 Which of them reach the mailbox is yours to choose — by default a task created, its status
