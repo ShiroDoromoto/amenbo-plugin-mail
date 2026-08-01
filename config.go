@@ -18,6 +18,7 @@ const (
 	keySMTPPassword = "smtp_password"
 	keyFrom         = "from"
 	keyTo           = "to"
+	keyEvents       = "events"
 )
 
 // requiredSettings are the ones a user has to fill in, in the order a complaint names them.
@@ -93,7 +94,7 @@ func loadConfig(cfg map[string]any) (settings, error) {
 		user:     configValue(cfg, keySMTPUser),
 		password: strings.TrimSpace(os.Getenv(secretEnv(keySMTPPassword))),
 		from:     configValue(cfg, keyFrom),
-		to:       splitAddresses(configValue(cfg, keyTo)),
+		to:       splitList(configValue(cfg, keyTo)),
 	}
 
 	read := map[string]string{keySMTPHost: s.host, keySMTPUser: s.user, keySMTPPassword: s.password}
@@ -120,13 +121,14 @@ func loadConfig(cfg map[string]any) (settings, error) {
 	return s, nil
 }
 
-// splitAddresses breaks a comma-separated list of addresses apart, dropping the empties a
-// trailing comma or a stray separator leaves behind.
-func splitAddresses(v string) []string {
+// splitList breaks a comma-separated setting apart, dropping the empties a trailing comma or a
+// stray separator leaves behind. Comma-separated is how amenbo stores a setting that holds
+// several values, so it is how both the recipients and the chosen events arrive.
+func splitList(v string) []string {
 	var out []string
-	for _, addr := range strings.Split(v, ",") {
-		if addr = strings.TrimSpace(addr); addr != "" {
-			out = append(out, addr)
+	for _, item := range strings.Split(v, ",") {
+		if item = strings.TrimSpace(item); item != "" {
+			out = append(out, item)
 		}
 	}
 	return out
