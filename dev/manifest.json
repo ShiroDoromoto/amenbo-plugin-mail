@@ -34,12 +34,12 @@
   "payload_v": 1,
   "min_amenbo": "3.1.0",
   "config": [
-    { "key": "smtp_host", "label": "SMTP host", "required": true },
-    { "key": "smtp_port", "label": "SMTP port", "default": "587" },
-    { "key": "smtp_user", "label": "SMTP username", "required": true },
-    { "key": "smtp_password", "label": "SMTP password", "required": true, "secret": true },
-    { "key": "from", "label": "Sender address (defaults to the account)" },
-    { "key": "to", "label": "Where to report to (defaults to the account)" },
+    { "key": "smtp_host", "label": "SMTP server (Gmail: smtp.gmail.com)", "required": true },
+    { "key": "smtp_port", "label": "Port", "default": "587" },
+    { "key": "smtp_user", "label": "Account (Gmail: your address)", "required": true },
+    { "key": "smtp_password", "label": "Password (Gmail: an app password)", "required": true, "secret": true },
+    { "key": "from", "label": "From (defaults to the account)" },
+    { "key": "to", "label": "To (defaults to the account; comma-separated for several)" },
     {
       "key": "events",
       "label": "What to report",

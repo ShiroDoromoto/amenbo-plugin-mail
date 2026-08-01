@@ -14,6 +14,7 @@ const manifestPath = "dev/manifest.json"
 
 type manifestSetting struct {
 	Key      string `json:"key"`
+	Label    string `json:"label"`
 	Default  string `json:"default"`
 	Secret   bool   `json:"secret"`
 	Required bool   `json:"required"`
@@ -132,6 +133,31 @@ func TestManifestOffersEveryReportableEventAndTheDefaultFour(t *testing.T) {
 
 	if got, want := declared[keyEvents].Default, strings.Join(defaultEvents, ","); got != want {
 		t.Errorf("%s defaults %s to %q, but an unchosen one reports %q", manifestPath, keyEvents, got, want)
+	}
+}
+
+// The label is the whole of what a setting says for itself: the manifest has no room for a
+// description or a placeholder beside it, so a setting without one is a blank field with a key
+// above it.
+func TestManifestNamesEverySetting(t *testing.T) {
+	for _, s := range readManifest(t).Config {
+		if strings.TrimSpace(s.Label) == "" {
+			t.Errorf("%s gives %q no label, so it is shown as a field with nothing said about it", manifestPath, s.Key)
+		}
+	}
+}
+
+// A default is where a setting the user never filled in actually goes, which is why only the two
+// that have a real one carry it. The server is the setting this matters most for: a provider's
+// name left there as an example would hand the account and its password of anyone who forgot the
+// field to a service they never chose.
+func TestManifestDefaultsOnlyWhereThereIsARealDefault(t *testing.T) {
+	real := map[string]bool{keySMTPPort: true, keyEvents: true}
+	for _, s := range readManifest(t).Config {
+		if s.Default != "" && !real[s.Key] {
+			t.Errorf("%s defaults %q to %q, but an unfilled one has no right answer to fall back on",
+				manifestPath, s.Key, s.Default)
+		}
 	}
 }
 
