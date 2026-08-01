@@ -7,28 +7,28 @@
   "category": "notification",
   "assets": {
     "macos-arm64": {
-      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-macos-arm64.tar.gz",
-      "checksum": "sha256:1357d69dc3d2ead390821a568be256d2d54fd150f35e8f46f02f6da646989b74"
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v2/mail-v2-macos-arm64.tar.gz",
+      "checksum": "sha256:34cd6c8f07752de3dc4d38c7a3bb88dbd730b3425cbb96da1964d30128b29adf"
     },
     "macos-x64": {
-      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-macos-x64.tar.gz",
-      "checksum": "sha256:44d7cc6637480e86de7dfd2062aeeaa5a71d0372e52e1c1b7de44684911c9147"
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v2/mail-v2-macos-x64.tar.gz",
+      "checksum": "sha256:756e5a34504d0270a493f1dd3476796f12cf7eb6d0123b9b244df11acf5f40f6"
     },
     "linux-x64": {
-      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-linux-x64.tar.gz",
-      "checksum": "sha256:349a57abaef31cec0205bea71781823753f091e155e1b2f68f77ebebc3a1d931"
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v2/mail-v2-linux-x64.tar.gz",
+      "checksum": "sha256:ba80f20223cfccf0b06cf7c5b1b1b6ea048f040d460cdc143144d0c665e830f4"
     },
     "linux-arm64": {
-      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-linux-arm64.tar.gz",
-      "checksum": "sha256:83aaa005eb340673e666d7c8394ba3d3a56087b01dbca08ca14ecb31fb64a7fc"
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v2/mail-v2-linux-arm64.tar.gz",
+      "checksum": "sha256:ebd7adc0bdab041d45df027bbed1ee9c3cae479b9a96b92c68159e03f19aa793"
     },
     "windows-x64": {
-      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-windows-x64.tar.gz",
-      "checksum": "sha256:f20da7a253b04a3d51a74d404f5dce5b9e9dd841c6eac7924a8d96aa0235ac3c"
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v2/mail-v2-windows-x64.tar.gz",
+      "checksum": "sha256:d4735afa827e8948c37518296eb288800cbc74422ac82747125e5b30a2dcaae0"
     },
     "windows-arm64": {
-      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v1/mail-v1-windows-arm64.tar.gz",
-      "checksum": "sha256:7342681998ca43b944970f802dd9dcb5743bdba856f15398d246a73b441765da"
+      "url": "https://github.com/ShiroDoromoto/amenbo-plugin-mail/releases/download/v2/mail-v2-windows-arm64.tar.gz",
+      "checksum": "sha256:aac36d6b6471d531d20ed4786c7ad94772bedf836eeb6f6229b933e311f9703c"
     }
   },
   "payload_v": 1,
