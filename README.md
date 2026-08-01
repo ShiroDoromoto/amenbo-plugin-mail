@@ -18,10 +18,10 @@ Three things decide what arrives.
 
 **The skeleton, not the plugin.** What is here is the repository's shape — the build, the gate,
 the release, the manifest — and the plugin's entry point, with the payload contract it reads, the
-events it reports, and the settings it sends on. The wording of a message and the SMTP
-conversation that carries it are not written yet, so a hook run today decides whether the event
-has earned a message, works out where it would go, and leaves a line in `amenbo plugin log mail`
-instead of sending anything. A run whose required settings are empty ends on the error naming
+events it reports, the settings it sends on, and the SMTP conversation that would carry a message.
+The wording of a message is not written yet, and until it is nothing hands one over, so a hook run
+today decides whether the event has earned a message, works out where it would go, and leaves a
+line in `amenbo plugin log mail` instead of sending anything. A run whose required settings are empty ends on the error naming
 them, which is the one failure this build already reports for real.
 
 `dev/manifest.json` carries placeholder digests (all zeroes) against a `v1` that has not been cut.

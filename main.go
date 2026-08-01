@@ -21,10 +21,10 @@
 //
 // Here are the entry point and the payload contract; config.go has the settings a message is
 // sent on, events.go which events earn one, state.go the per-project folder that whatever has
-// to outlive one run is kept in, and seen.go the record of the events already taken in, which
-// is what tells a redelivery from a first sight of one. The wording of a message and the SMTP
-// conversation that carries it are still to be written — and until they are, nothing calls
-// those last two — so a hook run today reads its event, works out
+// to outlive one run is kept in, seen.go the record of the events already taken in — what tells
+// a redelivery from a first sight of one — and send.go the SMTP conversation that carries a
+// message. The wording of a message is what is still to be written, and until it is nothing
+// calls those last three, so a hook run today reads its event, works out
 // where it would go, says on stderr that it cannot take it there yet, and ends cleanly. A run
 // whose required settings are not filled in ends instead on the error naming them, which is the
 // one failure this build already reports for real.
@@ -182,8 +182,8 @@ func usage() {
 This plugin is not called. amenbo starts it when an event fires, and it reports the event by
 email, under a heading naming the project it came from.
 
-This build sends nothing: the wording of a message and the SMTP conversation that carries it
-are not written yet, so an event reaches 'amenbo plugin log mail' and stops there.
+This build sends nothing: the wording of a message is not written yet, and until it is nothing
+hands one over, so an event reaches 'amenbo plugin log mail' and stops there.
 
 Only the writes an AI drove are reported: the ones you drove yourself, you were there for.
 Which of them reach the mailbox is yours to choose — by default a task created, its status
