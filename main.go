@@ -224,8 +224,18 @@ func usage() {
 This plugin is not called. amenbo starts it when an event fires, and it reports the event by
 email, under a heading naming the project it came from.
 
+One event is one line — when it happened, who did it, what they did, and the title behind a dash:
+
+  Subject: [my-project] Task finished AMB-T-<n>
+
+  my-project
+
+  2026-08-01 14:33:41  Alice finished AMB-T-<n> — Ship the thing
+
 Events that come one after another arrive as one message: while amenbo says more is waiting, each
-line is written down instead of sent, and the event that ends the burst carries all of them.
+line is written down instead of sent, and the event that ends the burst carries all of them. The
+subject then says how many rather than what happened. It is all written in the language you read
+amenbo in, which is amenbo's own setting and not one of this plugin's.
 
 Only the writes an AI drove are reported: the ones you drove yourself, you were there for.
 Which of them reach the mailbox is yours to choose — by default a task created, its status
@@ -245,6 +255,10 @@ Fill in the three and the plugin reports to the account's own mailbox; 'to' is w
 somewhere else. Every setting belongs to a project, so the value is which mailbox that project
 reports to. Fill them in with 'amenbo plugin config set mail smtp_host <host>', then switch the
 plugin on for the project with 'amenbo plugin enable mail'.
+
+On Gmail the account's own password will not authenticate: turn on 2-Step Verification and create
+an app password for it. The README has the steps, and the same three settings do for any other
+provider.
 
 Why nothing arrived is in 'amenbo plugin log mail' — one line per run, and the diagnostics
 of any run that did not end cleanly.`)

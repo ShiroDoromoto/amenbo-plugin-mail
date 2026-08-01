@@ -14,6 +14,50 @@ Three things decide what arrives.
   default is a task created, its status moved, and either terminal — done or decided against.
   Ticking none of them is an answer too: the plugin stays switched on and reports nothing.
 
+## What arrives
+
+A message about one event says what happened in its subject, and the project it happened in comes
+first — that is what a notification strip shows before you open anything.
+
+```
+Subject: [my-project] Task finished AMB-T-<n>
+
+my-project
+
+2026-08-01 14:33:41  Alice finished AMB-T-<n> — Ship the thing
+```
+
+One carrying several says how many instead, since what those events have in common by then is the
+project and the count:
+
+```
+Subject: [my-project] 3 updates
+
+my-project
+
+2026-08-01 14:32:05  Alice created AMB-T-<n> — Ship the thing
+2026-08-01 14:32:06  Alice moved AMB-T-<n> to In progress — Ship the thing
+2026-08-01 14:33:41  Alice finished AMB-T-<n> — Ship the thing
+```
+
+One event is one line: when it happened, who did it, what they did, and the title behind a dash.
+The moment leads so a column of them reads down, and it is in the time of the machine amenbo runs
+on. The name is whatever amenbo displays for your AI. A title that could not be read back is simply
+not there — what happened, and to what, is on the line without it.
+
+Titles stay out of the subject. Everything else in one is vocabulary amenbo owns and a length that
+can be reckoned with, while a title is whatever you typed; a subject is cut to sixty characters, and
+a cut title says something other than what it said. Only the project gives way to that limit.
+
+The body is plain text, with no HTML beside it: a list of moments has no headings or tables to gain
+anything from markup, it reads the same in every mail client, and one form to build is one form
+that can be wrong.
+
+**The message is written in the language you read amenbo in.** It follows amenbo's own language
+setting — nineteen languages, English for anything else — so the plugin has nothing to set for it.
+Statuses are named the way amenbo names them, and an event a future amenbo adds is reported under
+its own name rather than dropped.
+
 ## A burst is one message
 
 One thing you do is often many events. Deleting a project, or clearing out the tasks that piled up
@@ -34,17 +78,6 @@ What that costs is honesty about the two edges.
 
 Lines wait per project, so what one project holds is never posted to the mailbox another one names.
 A run with nowhere to write cannot hold anything back, and reports its event on its own instead.
-
-## Where this is
-
-**Nothing has been cut yet.** `dev/manifest.json` carries placeholder digests (all zeroes) against
-a `v1` that does not exist. They are replaced from the release run's summary — never transcribed by
-hand — before the catalog entry quotes them.
-
-Two failures the plugin reports for real: a run whose required settings are empty ends on the error
-naming them, and one whose read did not come back ends non-zero having said what it could — a
-message that names a number is worth more than no message at all. Why nothing arrived is in
-`amenbo plugin log mail`, one line per run.
 
 ## Settings
 
@@ -79,6 +112,47 @@ amenbo plugin config set mail to someone@example.com,someone-else@example.com   
 amenbo plugin enable mail            # installing never runs anything; this is the consent
 ```
 
+### Gmail
+
+Gmail is what most people already have an account with, so it is the example each setting's label
+carries. Its own password will not get you in: Google refuses plain SMTP authentication on an
+account and wants a sixteen-character **app password** instead, which exists only for programs like
+this one and can be revoked on its own.
+
+1. Turn on 2-Step Verification for the account — app passwords are not offered without it.
+2. Create an app password at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords),
+   naming it something you will recognise later (`amenbo`).
+3. Fill it in as `smtp_password`, the sixteen characters run together — the screen shows them in
+   groups of four, and the spaces are not part of it.
+
+```sh
+amenbo plugin config set mail smtp_host smtp.gmail.com
+amenbo plugin config set mail smtp_user you@gmail.com
+printf %s 'the app password' | amenbo plugin config set mail smtp_password -
+```
+
+`smtp_port` stays at its default of 587, and `from` and `to` at the account. Google keeps a copy of
+everything sent through it in that account's Sent folder — a notification you sent to yourself lands
+in the mailbox twice, which is worth knowing before you wonder which copy is which.
+
+Any other provider works the same way: its SMTP server, an account on it, and whatever that
+provider calls the password a program may use.
+
+## When nothing arrives
+
+`amenbo plugin log mail` is where a run explains itself — one line per run, and the diagnostics of
+any that did not end cleanly. Three answers it gives:
+
+- **A required setting is empty.** The run ends on an error naming every empty one at once, so the
+  configuration is fixed in one go rather than a key at a time.
+- **The server would not take the message.** What it said is in the log, with the password taken
+  out of it. The lines are kept and go out with the next message.
+- **Nothing at all, cleanly.** The event was one you drove yourself, or one `events` does not tick,
+  or the burst it belongs to is still coming.
+
+A password never appears in the log, and the log is part of what an export carries out of the store
+— that is what it is kept out of.
+
 ## Build
 
 ```sh
@@ -100,6 +174,10 @@ released asset, verifying its provenance — so never point it at a base holding
 
 Pushing a `v*` tag runs the release workflow: it bakes every asset key the catalog entry publishes,
 creates the GitHub release, and prints the digests in the run summary.
+
+**Nothing has been cut yet.** `dev/manifest.json` carries placeholder digests (all zeroes) against a
+`v1` that does not exist. They are replaced from the release run's summary — never transcribed by
+hand — before the catalog entry quotes them.
 
 **A release is not a distribution.** Nothing installs from those bytes until the catalog entry in
 [amenbo-plugins](https://github.com/ShiroDoromoto/amenbo-plugins) points at them, and that entry is
