@@ -39,9 +39,9 @@ type subjectWording struct {
 	// many says how many, with {n} standing for the count.
 	many string
 	// one is what many says for a count of one, in the languages that say it differently — a
-	// message carrying a single event does not always say it in full, since the run that sends
-	// it is not always the run the event arrived on. Left empty by every language a numeral
-	// changes nothing in, which is most of them outside Europe.
+	// message carrying a single line cannot always say what it was, a line held by an older
+	// build carrying no event to name. Left empty by every language a numeral changes nothing
+	// in, which is most of them outside Europe.
 	one string
 }
 
@@ -280,25 +280,29 @@ func subjectWordingFor(language string) subjectWording {
 
 // subjectForOne writes the subject of a message carrying a single event, which is the one case
 // where there is room to say what happened rather than how much did.
-func subjectForOne(in input, d details) string {
+//
+// It is written from the entry the message carries and not from the run that sends it. The two are
+// often different events: a burst ending on one nobody asked to hear about is sent by that run,
+// while what it carries is the line held before it. The entry is what the reader is about to read,
+// so the entry is what the subject is written from.
+func subjectForOne(e entry, d details) string {
 	sw := subjectWordingFor(d.language)
-	what, ok := sw.events[in.Event]
+	what, ok := sw.events[e.Event]
 	if !ok {
-		if what, ok = subjectWords[defaultLanguage].events[in.Event]; !ok {
-			what = in.Event
+		if what, ok = subjectWords[defaultLanguage].events[e.Event]; !ok {
+			what = e.Event
 		}
 	}
-	what = strings.ReplaceAll(what, "{status}", wordingFor(d.language).status(in.New))
-	return headerReady(subjectOf(d.project, what+" "+refName(in, d)))
+	what = strings.ReplaceAll(what, "{status}", wordingFor(d.language).status(e.Status))
+	return headerReady(subjectOf(d.project, what+" "+e.Ref))
 }
 
 // subjectForMany writes the subject of a message carrying a burst. What the events have in common
 // by then is the project and how many of them there were, so that is what it says.
 //
-// It counts one as readily as five. A message carries a single event without this one being able
-// to say it in full whenever the run that sends it is not the run the event arrived on — a burst
-// ending on an event nobody asked to hear about is exactly that — so the count has to read as well
-// at one as it does above it.
+// It counts one as readily as five. A line held by a build before entries said what they were
+// about arrives with no event to name, and a message carrying that one line has nothing to say but
+// how many — so the count has to read as well at one as it does above it.
 func subjectForMany(d details, n int) string {
 	sw := subjectWordingFor(d.language)
 	count := sw.many

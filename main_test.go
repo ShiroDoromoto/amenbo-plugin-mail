@@ -214,6 +214,54 @@ func TestHookKeepsTheLinesWhenTheSendFails(t *testing.T) {
 	}
 }
 
+// The run that ends a burst is often not the run the line in it arrived on — amenbo fires
+// task.created and task.assigned together, and the default reports only the first. The message
+// still carries one event, so it says what happened rather than how many there were.
+func TestHookSaysWhatHappenedWhenAnotherRunCarriesTheLine(t *testing.T) {
+	holding(t)
+	t.Setenv(envQueueRemaining, "1")
+	sent := holdMessages(t)
+	if err := hook(event(eventTaskDone)); err != nil {
+		t.Fatalf("hook: %v", err)
+	}
+
+	t.Setenv(envQueueRemaining, "0")
+	last := event(eventTaskAssigned)
+	last.At = "2026-08-01T09:00:01Z"
+	if err := hook(last); err != nil {
+		t.Fatalf("hook: %v", err)
+	}
+
+	if len(*sent) != 1 {
+		t.Fatalf("sent %d message(s), want the one carrying what was held", len(*sent))
+	}
+	if got := (*sent)[0].text(t); !strings.Contains(got, "タスクを完了") {
+		t.Errorf("subject = %q, want what the one event it carries was", got)
+	}
+}
+
+// A line held by a build that wrote no event has nothing to say but how many, and saying that is
+// better than an update nobody gets.
+func TestHookSaysHowManyForALineItCannotDescribe(t *testing.T) {
+	s := holding(t)
+	if err := s.setLines(pendingFile, []string{"2026-08-01 14:33:41  AI finished " + sampleRef}); err != nil {
+		t.Fatalf("setLines: %v", err)
+	}
+	sent := holdMessages(t)
+
+	last := event(eventTaskAssigned)
+	if err := hook(last); err != nil {
+		t.Fatalf("hook: %v", err)
+	}
+
+	if len(*sent) != 1 {
+		t.Fatalf("sent %d message(s), want the one carrying the waiting line", len(*sent))
+	}
+	if got := (*sent)[0].text(t); !strings.Contains(got, "1") {
+		t.Errorf("subject = %q, want how many it carries", got)
+	}
+}
+
 // A project is one conversation in the mailbox: the first message begins the thread, and every one
 // after it names that same first message rather than the one just before it.
 func TestHookGathersAProjectsMessagesIntoOneThread(t *testing.T) {

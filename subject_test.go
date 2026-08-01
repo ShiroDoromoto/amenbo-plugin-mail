@@ -51,7 +51,7 @@ func TestSubjectForOneSaysWhatHappenedAndToWhat(t *testing.T) {
 			d := spoken(tc.language)
 			d.project = "amenbo-plugin-mail"
 
-			got := decoded(t, subjectForOne(anEventAt(eventTaskDone, "2026-08-01T05:51:02Z"), d))
+			got := decoded(t, subjectForOne(entryFor(anEventAt(eventTaskDone, "2026-08-01T05:51:02Z"), d), d))
 
 			if got != tc.want {
 				t.Errorf("subjectForOne = %q, want %q", got, tc.want)
@@ -66,7 +66,7 @@ func TestSubjectForOneCallsAStatusWhatAmenboCallsIt(t *testing.T) {
 	d := spoken("ja")
 	d.project = "amenbo"
 
-	if got, want := decoded(t, subjectForOne(in, d)), "[amenbo] タスクを進行中に変更 "+sampleRef; got != want {
+	if got, want := decoded(t, subjectForOne(entryFor(in, d), d)), "[amenbo] タスクを進行中に変更 "+sampleRef; got != want {
 		t.Errorf("subjectForOne = %q, want %q", got, want)
 	}
 }
@@ -202,7 +202,7 @@ func TestEveryLanguageWritesASubjectForEveryEvent(t *testing.T) {
 			in := anEventAt(event, "2026-08-01T05:32:05Z")
 			in.New = statusInProgress
 
-			one := decoded(t, subjectForOne(in, d))
+			one := decoded(t, subjectForOne(entryFor(in, d), d))
 			if strings.Contains(one, "{") {
 				t.Errorf("%s / %s left something unfilled: %q", w.language, event, one)
 			}
@@ -220,7 +220,7 @@ func TestSubjectForAnEventNoLanguageHasAWordFor(t *testing.T) {
 	d := spoken("ja")
 	d.project = "amenbo"
 
-	got := decoded(t, subjectForOne(anEventAt("task.hibernated", "2026-08-01T05:32:05Z"), d))
+	got := decoded(t, subjectForOne(entryFor(anEventAt("task.hibernated", "2026-08-01T05:32:05Z"), d), d))
 
 	if !strings.Contains(got, "task.hibernated") {
 		t.Errorf("subjectForOne = %q, want it to still say what happened", got)

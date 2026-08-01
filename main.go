@@ -23,11 +23,11 @@
 // sent on, events.go which events earn one, reader.go what amenbo is asked to fill a number in
 // with, state.go the per-project folder that whatever has to outlive one run is kept in, seen.go
 // the record of the events already taken in — what tells a redelivery from a first sight of one
-// — pending.go the lines waiting for the message that carries them, thread.go the one thread a
-// project's messages are gathered into, send.go the SMTP conversation that carries them,
-// wording.go the one line an event becomes in the language amenbo is set to, subject.go the line
-// a message opens with, and body.go what is written under it. The hook below is the order those
-// are put in.
+// — pending.go the lines waiting for the message that carries them and what each was about,
+// thread.go the one thread a project's messages are gathered into, send.go the SMTP conversation
+// that carries them, wording.go the one line an event becomes in the language amenbo is set to,
+// subject.go the line a message opens with, and body.go what is written under it. The hook below
+// is the order those are put in.
 package main
 
 import (
@@ -145,8 +145,8 @@ func hook(in input) error {
 	s := stateFromEnv()
 	reported := in.Actor == actorAI && selectedEvents(in.Config)[in.Event]
 	fresh := reported && takeIn(s, in)
-	lines := pending(s)
-	if !fresh && (len(lines) == 0 || queueRemaining() > 0) {
+	waiting := pending(s)
+	if !fresh && (len(waiting) == 0 || queueRemaining() > 0) {
 		// Nothing of this run's own to say, and nothing waiting that this run has to carry.
 		// Answering here is what keeps an event nobody asked about from being the one that
 		// complains the plugin is unconfigured.
@@ -160,31 +160,32 @@ func hook(in input) error {
 
 	var d details
 	var readErr error
-	held := true
+	kept := true
 	if fresh {
 		d, readErr = lookup(in)
-		lines, held = keepPending(s, lines, eventLine(in, d))
+		waiting, kept = keepPending(s, waiting, entryFor(in, d))
 	} else {
 		d, readErr = surroundings()
 	}
-	if held && queueRemaining() > 0 {
+	if kept && queueRemaining() > 0 {
 		// The burst is not over. The lines are on disk, and the run amenbo ends it with sends them.
 		return readErr
 	}
 
-	subject := subjectForMany(d, len(lines))
-	if fresh && len(lines) == 1 {
-		// The message carries this event and nothing else, so it can say what happened.
-		subject = subjectForOne(in, d)
+	subject := subjectForMany(d, len(waiting))
+	if len(waiting) == 1 && waiting[0].Event != "" {
+		// The message carries one event and knows which, so it can say what happened — whether
+		// or not this is the run that event arrived on.
+		subject = subjectForOne(waiting[0], d)
 	}
 	t := threadFor(s, cfg.from)
-	if err := sendMessage(cfg, subject, messageBody(d.project, lines), t); err != nil {
+	if err := sendMessage(cfg, subject, messageBody(d.project, texts(waiting)), t); err != nil {
 		// The lines stay where they are. amenbo does not hand a failed event back, so a message
 		// this could not deliver is one the next message has to carry.
 		return errors.Join(readErr, err)
 	}
-	logf("%s: %d event(s) reported to %s", pluginName, len(lines), strings.Join(cfg.to, ", "))
-	if held {
+	logf("%s: %d event(s) reported to %s", pluginName, len(waiting), strings.Join(cfg.to, ", "))
+	if kept {
 		dropPending(s)
 	}
 	// Both of these follow the send rather than lead it: a line forgotten early is lost, and a
